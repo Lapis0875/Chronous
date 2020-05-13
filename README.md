@@ -1,2 +1,2 @@
 # Chronous
-Python library for Asynchronous Game System. I made this to use in discord.py
+Chronous is a asynchronous python library made for building game system on discord.py
