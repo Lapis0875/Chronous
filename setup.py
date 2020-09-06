@@ -1,12 +1,12 @@
 import setuptools
 
 setuptools.setup(
-    name="Chronous",
+    name="chronous",
     version="1.0.0",
     license='MIT',
     author="Lapis0875",
     author_email="lapis0875@kakao.com",
-    description="Aysnchronous Game library for discord.py",
+    description="Library for Event-Driven architecture using asyncio.",
     long_description=open('README.md').read(),
     url="https://github.com/Lapis0875/Chronous",
     packages=setuptools.find_packages(),
