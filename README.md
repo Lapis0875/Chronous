@@ -1,6 +1,6 @@
 # Chronous
-![pypi](https://img.shields.io/pypi/pyversions/chronous?label=Python&logo=python&logoColor=yellow)
-![format](https://img.shields.io/pypi/format/chronous?label=package-format&logo=pypi)
+![py_ver](https://img.shields.io/pypi/pyversions/chronous?label=Python%20Version&logo=python&logoColor=yellow)
+![pypi](https://img.shields.io/pypi/format/chronous?label=package&logo=pypi)
 ![discord](https://img.shields.io/discord/622434051365535745?color=blue&label=Discord&logo=Discord&logoColor=White)
 ![release](https://img.shields.io/github/release-date/Lapis0875/Chronous)
 
