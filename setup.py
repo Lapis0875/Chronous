@@ -5,12 +5,12 @@ setup(
     # Module name
     name="chronous",
     # Module version
-    version="1.0.2",
+    version="1.1.0",
     # License - MIT!
     license='MIT',
     # Author (Github username)
     author="Lapis0875",
-    # Author, Lapis0875`s email.
+    # Author`s email.
     author_email="lapis0875@kakao.com",
     # Short description
     description="Library for Event-Driven architecture using asyncio.",
@@ -29,7 +29,7 @@ setup(
     # Tags about the module
     classifiers=[
         "Programming Language :: Python :: 3",
-        "License :: OSI Approved :: MIT License",
+        "License :: MIT License",
         "Operating System :: OS Independent"
     ],
 )
