@@ -3,7 +3,7 @@ from __future__ import annotations
 import asyncio
 import inspect
 import logging
-from typing import Dict, List, Awaitable, Any, Type, Callable, Optional
+from typing import Dict, List, Awaitable, Any, Type, Callable, Optional, NoReturn
 
 logger = logging.getLogger("chronous")
 
@@ -17,47 +17,52 @@ class EventMeta(type):
         logger.debug(metacls.event_tracks)
         return cls
 
+    def get_tracking_events(cls) -> Dict[str, object]:
+        return cls.event_tracks
+
 
 class EventContext:
-    def __init__(self, event: Type[BaseEvent], *args: Optional[Any], **kwargs: Optional[Any]) -> None:
+    def __init__(self, event: Type[BaseEvent]) -> None:
         self.event = event
-        self.args = args
-        self.kwargs = kwargs
+
+    def __repr__(self) -> str:
+        return "<EventContext:event={0}>".format(self.event.name)
 
 
 class EventException(Exception):
     def __init__(self, event: BaseEvent, msg: Optional[str] = None) -> None:
         self.event = event
-        self.msg = msg if msg is not None else f"Unexpected exception has been occured during processing event: {event.name}"
+        self.msg = (msg if msg is not None
+                    else "Unexpected exception has been occured during processing event: {0}".format(event.name))
 
     def __repr__(self) -> str:
-        return f"<EventException:event={self.event.name}>"
+        return "<EventException:event={0}>".format(self.event.name)
 
 
 class MalformedListenerException(EventException):
     def __init__(self, event: BaseEvent, malformed_listener: LISTENER, expected_listener_format: inspect.Arguments) -> None:
-        msg = f"Listener is malformed! : {malformed_listener} does not match with expected listener format." \
-              f""
-        logger.debug(MalformedListenerException, self).__init__(event=event, msg=msg)
         self.malformed_listener: LISTENER = malformed_listener
         self.expected_listener_format: inspect.Arguments = expected_listener_format
+        self.malformed_format: inspect.Arguments = inspect.getargs(self.malformed_listener.__code__)
+        msg = ("Listener is malformed! : listener args {0} does not match with expected listener format {1}"
+               .format(self.malformed_format, self.expected_listener_format))
+        super(MalformedListenerException, self).__init__(event, msg)
 
     def __repr__(self) -> str:
-        return f"<MalformedListenerException:event={self.event.name}," \
-               f"malformed_listener:{self.malformed_listener}" \
-               f"malformed_format:{inspect.getargs(self.malformed_listener.__code__)}>" \
-               f"expected_format:{self.expected_listener_format}>"
+        return ("<MalformedListenerException:event={0},malformed_listener:{1},malformed_format:{2}>"
+                .format(self.event.name, self.malformed_listener, self.malformed_format))
 
 
 class ListenerException(EventException):
     def __init__(self, event: BaseEvent, listener: LISTENER, original: Type[BaseException]):
         msg: str = "Listener {0!r} raised exception {1.__class__.__name__} : {1}".format(listener, original)
-        super(ListenerException, self).__init__(event=event)
+        super(ListenerException, self).__init__(event, msg)
         self.listener: LISTENER = listener
         self.original: Type[BaseException] = original
 
     def __repr__(self) -> str:
-        return f"<ListenerException:event={self.event.name},listener={self.listener},original={self.original}>"
+        return ("<ListenerException:event={0},listener={1},original={2}>"
+                .format(self.event.name, self.listener, self.original))
 
 
 class BaseEvent(metaclass=EventMeta):
@@ -76,11 +81,21 @@ class BaseEvent(metaclass=EventMeta):
         # Please override this listener method in your needs
         raise NotImplementedError("Listener template not implemented!")
 
-    def add_listener(self, listener: LISTENER) -> None:
+    def register_listener(self, listener: LISTENER) -> NoReturn:
+        """
+        Add listener in event`s listener list.
+        :param listener: listener to add
+        """
         if not asyncio.iscoroutinefunction(listener):
-            logger.error(f"Given listener {listener} is not coroutine function! It must be defined using 'async def'")
+            logger.error(
+                msg="Given listener {0} is not coroutine function! It must be defined using 'async def'"
+                    .format(listener)
+            )
             raise TypeError("Listeners must be coroutine function (defined using 'async def')")
+
+        # inspect arguments in :param listener: and event`s listener template (staticmethod 'listener')
         if inspect.getargs(listener.__code__) != inspect.getargs(self.listener.__code__):
+            # :param listener: does not have same arguments with event`s listener template. Malformed!
             raise MalformedListenerException(
                 event=self,
                 malformed_listener=listener,
@@ -88,52 +103,39 @@ class BaseEvent(metaclass=EventMeta):
             )
         self.listeners.append(listener)
 
-    def inspect_listener(self, listener: LISTENER) -> None:
-        """
-        @Replection
-        Debug method to inspect given listener and compare with Class`s listener format.
-        :param listener: Given listener instance
-        """
-        inspect_given: inspect.Arguments = inspect.getargs(listener.__code__)
-        inspect_format: inspect.Arguments = inspect.getargs(self.listener.__code__)
-        logger.debug('='*20)
-        logger.debug(f"[{self.name}.add_listener] given_listener -> instance : {listener}")
-        logger.debug(f"[{self.name}.add_listener] given_listener -> __doc__ : {listener.__doc__}")
-        logger.debug(f"[{self.name}.add_listener] given_listener -> __dict__ : {listener.__dict__}")
-        logger.debug(f"[{self.name}.add_listener] given_listener -> __annotations__ : {listener.__annotations__}")
-        logger.debug(f"[{self.name}.add_listener] given_listener -> __defaults__ : {listener.__defaults__}")
-        logger.debug(f"[{self.name}.add_listener] given_listener -> __kwdefaults__ : {listener.__kwdefaults__}")
-        logger.debug(f"[{self.name}.add_listener] given_listener -> __code__ : {listener.__code__}")
-        logger.debug(f"[{self.name}.add_listener] given_listener -> inspect args : {inspect_given}")
-        logger.debug(f"[{self.name}.add_listener] given_listener -> type() : {type(listener)}")
-        logger.debug(f"[{self.name}.add_listener] given_listener -> dir() : {dir(listener)}")
-        logger.debug('='*20)
-        logger.debug(f"[{self.name}.add_listener] given_listener -> instance : {self.listener}")
-        logger.debug(f"[{self.name}.add_listener] listener_format -> __doc__ : {self.listener.__doc__}")
-        logger.debug(f"[{self.name}.add_listener] listener_format -> __dict__ : {self.listener.__dict__}")
-        logger.debug(f"[{self.name}.add_listener] listener_format -> __annotations__ : {self.listener.__annotations__}")
-        logger.debug(f"[{self.name}.add_listener] listener_format -> __defaults__ : {self.listener.__defaults__}")
-        logger.debug(f"[{self.name}.add_listener] listener_format -> __kwdefaults__ : {self.listener.__kwdefaults__}")
-        logger.debug(f"[{self.name}.add_listener] listener_format -> __code__ : {self.listener.__code__}")
-        logger.debug(f"[{self.name}.add_listener] listener_format -> inspect args : {inspect_format}")
-        logger.debug(f"[{self.name}.add_listener] listener_format -> type() : {type(self.listener)}")
-        logger.debug(f"[{self.name}.add_listener] listener_format -> dir() : {dir(self.listener)}")
-        logger.debug('='*20)
+    # alias
+    add_listener: Callable[[object, LISTENER], NoReturn] = register_listener
 
-    async def dispatch(self, *args, **kwargs):
-        logger.debug(f"listeners : {self.listeners}")
-        current_listener: LISTENER = None
-        try:
-            for listener in self.listeners:
-                current_listener = listener
-                await listener(
-                    EventContext(
-                        event=self
-                    ),
-                    *args, **kwargs
-                )
-        except Exception as e:
-            raise ListenerException(event=self, listener=current_listener, original=e)
+    # TODO : Add some ways to remove listener. Maybe restricting @listen decorator to get unique name for listener?
+
+    async def dispatch(self, *args, **kwargs) -> NoReturn:
+        """
+        Dispatch the event.
+        Call all registered listeners with given parameters.
+        :param args: positional arguments used in listener
+        :param kwargs: keyword arguments used in listener
+        """
+        logger.debug("listeners : {0}".format(self.listeners))
+        tasks: List[asyncio.Task] = []
+        for i, listener in enumerate(self.listeners):
+            logger.debug("Wrapping listener_{0} {1} into asyncio.Task instance.".format(i, listener))
+            listener_task = asyncio.create_task(
+                listener(
+                    EventContext(event=self),
+                    *args,
+                    **kwargs
+                ),
+                name="dispatch_{0}_{1}".format(self.name, i)
+            )
+            tasks.append(listener_task)
+        logger.debug("Await all tasks")
+        results = await asyncio.gather(*tasks)
+        logger.debug("Dispatch results : {0}".format(results))
+        for i, result in enumerate(results):
+            logger.debug("Dispatch {0} result : {1}".format(i, result))
+            if isinstance(result, Exception):
+                logger.debug("Found Exception on the result of dispatch {0}. Raising ListenerException...".format(i))
+                raise ListenerException(event=self, listener=self.listeners[i], original=result)
 
 
 # Type hints
