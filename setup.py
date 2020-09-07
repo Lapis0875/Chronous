@@ -5,7 +5,7 @@ setup(
     # Module name
     name="chronous",
     # Module version
-    version="1.0.0",
+    version="1.0.2",
     # License - MIT!
     license='MIT',
     # Author (Github username)
@@ -15,7 +15,7 @@ setup(
     # Short description
     description="Library for Event-Driven architecture using asyncio.",
     # Long description in REAMDME.md
-    long_description=open("README.md", mode="rt", encoding="utf-8").read(),
+    long_description=open('README.rst').read(),
     # Project url
     url="https://github.com/Lapis0875/Chronous",
     # Include module directory 'chronous'
