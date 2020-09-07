@@ -24,8 +24,8 @@ from . import events
 import sys, logging
 from colorlog import ColoredFormatter
 
-logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
+logger = logging.getLogger("chronous")
+logger.setLevel(logging.DEBUG)
 console_handler = logging.StreamHandler(sys.stdout)
 console_handler.setFormatter(
     ColoredFormatter(
