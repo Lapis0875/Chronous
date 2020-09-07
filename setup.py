@@ -5,7 +5,7 @@ setup(
     # Module name
     name="chronous",
     # Module version
-    version="pre-1.0.1",
+    version="pre-1.0.2",
     # License - MIT!
     license='MIT',
     # Author (Github username)
