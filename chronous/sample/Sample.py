@@ -10,10 +10,10 @@ class SampleArchitecture(BaseArchitecture):
         super(SampleArchitecture, self).__init__(name="sample")
 
         # Registering events
-        self.registerEvent(event=Setup())
-        self.registerEvent(event=Init())
-        self.registerEvent(event=Start())
-        self.registerEvent(event=Close())
+        self.register_event(event=Setup())
+        self.register_event(event=Init())
+        self.register_event(event=Start())
+        self.register_event(event=Close())
 
     def run(self) -> None:
         # Registering default lifecycle events
