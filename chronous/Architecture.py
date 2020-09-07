@@ -13,7 +13,7 @@ class BaseArchitecture:
         self.__event_loop = asyncio.get_event_loop()
         self.__events: Dict[str, EVENT] = {}
 
-    def registerEvent(self, event: EVENT):
+    def register_event(self, event: EVENT):
         if not isinstance(event, (BaseEvent, )):
             raise TypeError("Event must inherit the class 'BaseEvent' to be registered")
         if event.name not in self.__events.keys():
@@ -21,7 +21,7 @@ class BaseArchitecture:
             self.__events.update({event.name.lower(): event})
         logger.debug(self.__events)
 
-    def registerListener(self, listener: LISTENER, event_name: Optional[str] = None) -> None:
+    def register_listener(self, listener: LISTENER, event_name: Optional[str] = None) -> None:
         """
         Register listener in event.
         :param observer_coro: observer function
@@ -35,10 +35,7 @@ class BaseArchitecture:
 
         if event_name in self.__events.keys():
             event: EVENT = self.__events.get(event_name)
-            try:
-                event.add_listener(listener=listener)
-            except MalformedListenerException as e:
-                logger.debug("Given listener does not match with exepected format. Rejetcing...")
+            event.register_listener(listener=listener)
 
         else:
             logger.error("Given listener indicates unknown event {event}."
@@ -50,7 +47,7 @@ class BaseArchitecture:
 
         def decorator(listener_coro: LISTENER):
             logger.debug("Checking function inside @listen : {listener}".format(listener=listener_coro))
-            self.registerListener(listener=listener_coro, event_name=event_name)
+            self.register_listener(listener=listener_coro, event_name=event_name)
             return listener_coro
         return decorator
 
