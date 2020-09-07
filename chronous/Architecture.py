@@ -1,19 +1,17 @@
 import asyncio
 import logging
-from typing import Dict, Type, Coroutine, NoReturn, Callable, Any, Awaitable, Optional
-from .events import EVENT, LISTENER, EventContext, BaseEvent, MalformedListenerException, ListenerException
+from typing import Dict, NoReturn, Optional
+from .events import EVENT, LISTENER, BaseEvent, MalformedListenerException
 
 logger = logging.getLogger("chronous")
 
 
 class BaseArchitecture:
-    __name: str = ""
-    __event_loop: asyncio.AbstractEventLoop = None
-    __events: Dict[str, EVENT] = {}
 
-    def __init__(self, game_name: str):
-        self.__name = game_name
+    def __init__(self, name: str):
+        self.__name = name
         self.__event_loop = asyncio.get_event_loop()
+        self.__events: Dict[str, EVENT] = {}
 
     def registerEvent(self, event: EVENT):
         if not isinstance(event, (BaseEvent, )):
