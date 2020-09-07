@@ -1,13 +1,3 @@
-# Chronous
-![pypi](https://img.shields.io/pypi/pyversions/chronous?label=Python&logo=python&logoColor=yellow)
-![format](https://img.shields.io/pypi/format/chronous?label=package-format&logo=pypi)
-![discord](https://img.shields.io/discord/622434051365535745?color=blue&label=Discord&logo=Discord&logoColor=White)
-![release](https://img.shields.io/github/release-date/Lapis0875/Chronous)
-
-Chronous is a asynchronous python library designed to make asynchronous event-driven architectures on discord.py
-
-[Example]
-```python
 import asyncio
 from typing import NoReturn
 from chronous.Architecture import BaseArchitecture
@@ -17,7 +7,7 @@ from chronous.events.LifecycleEvents import *
 class SampleArchitecture(BaseArchitecture):
 
     def __init__(self) -> None:
-        super(SampleArchitecture, self).__init__(game_name="sample")
+        super(SampleArchitecture, self).__init__(name="sample")
 
         # Registering events
         self.registerEvent(event=Setup())
@@ -62,21 +52,20 @@ async def setup(ec: EventContext):
 @sample.listen()
 async def init(ec: EventContext):
     print("Initialization phase")
-    print("Event : {ec.event}".format(ec=ec))
+    print("Event : {event}".format(event=ec.event))
 
 
 # Additional arguments sample
 @sample.listen()
 async def start(ec: EventContext, time: datetime):
     print("Starting process...")
-    print(f"Starting at : {time}")
+    print("Starting at : {time}".format(time=time))
 
 
 # Exception sample
 @sample.listen()
 async def close(ec: EventContext):
     print("Closing process...")
+    print(f"Make an error : {1/0}")
 
 sample.run()
-
-```
