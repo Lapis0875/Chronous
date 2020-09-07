@@ -1,7 +1,7 @@
 ===============
 Chronous
 ===============
-|py_ver|
+|py_ver| |issues|
 
 |pypi_ver| |pypi_license| |pypi_package| |pypi_status|
 
@@ -11,6 +11,8 @@ Chronous
 
 .. |py_ver| image:: https://img.shields.io/pypi/pyversions/chronous?label=Python%20Version&logo=python&logoColor=yellow
    :target: https://python.org
+.. |issues| image:: https://img.shields.io/github/issues/Lapis0875/Chronous?logo=github&logoColor=white
+    :target: https://github.com/Lapis0875/Chronous/issues
 .. |pypi_ver| image:: https://img.shields.io/pypi/v/chronous?logo=pypi&logoColor=blue
     :target: https://pypi.org/project/chronous/
 .. |pypi_license| image:: https://img.shields.io/pypi/l/chronous?logo=pypi&logoColor=blue

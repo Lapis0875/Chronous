@@ -1,7 +1,9 @@
 # Chronous
+
 ![py_ver](https://img.shields.io/pypi/pyversions/chronous?label=Python%20Version&logo=python&logoColor=yellow)
+
 ![license](https://img.shields.io/github/license/Lapis0875/chronous?logo=github&logoColor=white)
-![release](https://img.shields.io/github/release-date/Lapis0875/Chronous)
+![issues](https://img.shields.io/github/issues/Lapis0875/Chronous?logo=github&logoColor=white)
 
 ![pypi_ver](https://img.shields.io/pypi/v/chronous?logo=pypi&logoColor=blue)
 ![pypi_package](https://img.shields.io/pypi/format/chronous?label=package&logo=pypi)
@@ -26,10 +28,10 @@ class SampleArchitecture(BaseArchitecture):
         super(SampleArchitecture, self).__init__(game_name="sample")
 
         # Registering events
-        self.registerEvent(event=Setup())
-        self.registerEvent(event=Init())
-        self.registerEvent(event=Start())
-        self.registerEvent(event=Close())
+        self.register_event(event=Setup())
+        self.register_event(event=Init())
+        self.register_event(event=Start())
+        self.register_event(event=Close())
 
     def run(self) -> None:
         # Registering default lifecycle events
