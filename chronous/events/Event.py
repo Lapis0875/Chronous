@@ -22,8 +22,10 @@ class EventMeta(type):
 
 
 class EventContext:
-    def __init__(self, event: Type[BaseEvent]) -> None:
+    def __init__(self, event: Type[BaseEvent], **attrs) -> None:
         self.event = event
+        for attr_key, attr_value in attrs.items():
+            setattr(self, attr_key, attr_value)
 
     def __repr__(self) -> str:
         return "<EventContext:event={0}>".format(self.event.name)
