@@ -1,7 +1,8 @@
 import asyncio
 from typing import NoReturn
+import datetime
 from chronous.Architecture import BaseArchitecture
-from chronous.events.LifecycleEvents import *
+from chronous.events import EventContext, Setup, Init, Start, Close
 
 
 class SampleArchitecture(BaseArchitecture):
@@ -17,7 +18,7 @@ class SampleArchitecture(BaseArchitecture):
 
     def run(self) -> None:
         # Registering default lifecycle events
-        # Start the game.
+        # Start process.
         print("Starting process...")
         asyncio.run(self.process())
 
@@ -40,19 +41,19 @@ sample = SampleArchitecture()
 # Multiple listener sample
 @sample.listen()
 async def setup(ec: EventContext):
-    print("{ec.name} phase - listener 1".format(ec=ec))
+    print("{e.name} phase - listener 1".format(e=ec.event))
 
 
 @sample.listen()
 async def setup(ec: EventContext):
-    print("{ec.name} phase - listener 2".format(ec=ec))
+    print("{e.name} phase - listener 2".format(e=ec.event))
 
 
 # EventContext  sample
 @sample.listen()
 async def init(ec: EventContext):
     print("Initialization phase")
-    print("Event : {event}".format(event=ec.event))
+    print("Event : {e}".format(e=ec.event))
 
 
 # Additional arguments sample
