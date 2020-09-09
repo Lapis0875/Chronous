@@ -28,69 +28,74 @@ Chronous
 
 .. code-block:: python
 
-    class SampleArchitecture(BaseArchitecture):
+  import asyncio
+  from typing import NoReturn
+  import datetime
+  from chronous.Architecture import BaseArchitecture
+  from chronous.events import EventContext, Setup, Init, Start, Close
 
-        def __init__(self) -> None:
-            super(SampleArchitecture, self).__init__(name="sample")
+  class SampleArchitecture(BaseArchitecture):
 
-            # Registering events
-            self.registerEvent(event=Setup())
-            self.registerEvent(event=Init())
-            self.registerEvent(event=Start())
-            self.registerEvent(event=Close())
+    def __init__(self) -> None:
+      super(SampleArchitecture, self).__init__(name="sample")
 
-        def run(self) -> None:
-            # Registering default lifecycle events
-            # Start the game.
-            print("Starting process...")
-            asyncio.run(self.process())
+      # Registering events
+      self.register_event(event=Setup())
+      self.register_event(event=Init())
+      self.register_event(event=Start())
+      self.register_event(event=Close())
 
-        async def process(self) -> NoReturn:
-            await self.dispatch("setup")
-            await self.dispatch("init")
-            print('='*20)
-            await self.dispatch("start", datetime.datetime.now())
-            index: int = 0
-            while index < 10:
-                print("Looping!")
-                index += 1
-            await self.dispatch("close")
-            print('='*20)
+    def run(self) -> None:
+      # Registering default lifecycle events
+      # Start process.
+      print("Starting process...")
+      asyncio.run(self.process())
 
-
-    sample = SampleArchitecture()
-
-
-    # Multiple listener sample
-    @sample.listen()
-    async def setup(ec: EventContext):
-        print("{ec.name} phase - listener 1".format(ec=ec))
+    async def process(self) -> NoReturn:
+      await self.dispatch("setup")
+      await self.dispatch("init")
+      print('='*20)
+      await self.dispatch("start", datetime.datetime.now())
+      index: int = 0
+      while index < 10:
+        print("Looping!")
+        index += 1
+      await self.dispatch("close")
+      print('='*20)
 
 
-    @sample.listen()
-    async def setup(ec: EventContext):
-        print("{ec.name} phase - listener 2".format(ec=ec))
+  sample = SampleArchitecture()
+
+  # Multiple listener sample
+  @sample.listen()
+  async def setup(ec: EventContext):
+    print("{e.name} phase - listener 1".format(e=ec.event))
 
 
-    # EventContext  sample
-    @sample.listen()
-    async def init(ec: EventContext):
-        print("Initialization phase")
-        print("Event : {event}".format(event=ec.event))
+  @sample.listen()
+  async def setup(ec: EventContext):
+    print("{e.name} phase - listener 2".format(e=ec.event))
 
 
-    # Additional arguments sample
-    @sample.listen()
-    async def start(ec: EventContext, time: datetime):
-        print("Starting process...")
-        print("Starting at : {time}".format(time=time))
+  # EventContext  sample
+  @sample.listen()
+  async def init(ec: EventContext):
+    print("Initialization phase")
+    print("Event : {e}".format(e=ec.event))
 
 
-    # Exception sample
-    @sample.listen()
-    async def close(ec: EventContext):
-        print("Closing process...")
-        print(f"Make an error : {1/0}")
+  # Additional arguments sample
+  @sample.listen()
+  async def start(ec: EventContext, time: datetime):
+    print("Starting process...")
+    print("Starting at : {time}".format(time=time))
 
-    sample.run()
+
+  # Exception sample
+  @sample.listen()
+  async def close(ec: EventContext):
+    print("Closing process...")
+    print(f"Make an error : {1/0}")
+
+  sample.run()
 
