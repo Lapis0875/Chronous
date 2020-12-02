@@ -12,10 +12,14 @@
 ![discord](https://img.shields.io/discord/622434051365535745?color=blue&label=Discord&logo=Discord&logoColor=White)
 
 
-Chronous is a asynchronous python library designed to make asynchronous event-driven architectures on discord.py
+Chronous is a asynchronous python library designed to make asynchronous event-driven architectures.
+Inspired by discord.py and Minecraft Bukkit's event system.
 
 [Example]
 ```python
+"""
+Sample source code in chronous/sample/simple_architecture.py
+"""
 import asyncio
 from typing import NoReturn
 import datetime

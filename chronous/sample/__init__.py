@@ -3,5 +3,5 @@ chronous.sample
 ~~~~~~~~~~~~~
 some sample code used to sample the module.
 """
-# Sample Architecture usage
-from .Sample import SampleArchitecture
+# Import sample architecture for pre-defined architecture usage.
+from .simple_architecture import SampleArchitecture

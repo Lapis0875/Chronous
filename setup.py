@@ -1,35 +1,57 @@
-from setuptools import setup, find_packages
+from setuptools import setup
+
+with open('README.rst', mode='rt', encoding='utf-8') as f:
+    readme = f.read()
+
+extras_require = {
+    'color': [
+        'colorama>=0.4.3',
+        'colorlog>=4.2.1'
+    ]
+}
 
 # Setup module
 setup(
     # Module name
-    name="chronous",
+    name='chronous',
     # Module version
-    version="1.2.1",
+    version='2.0.0',
     # License - MIT!
     license='MIT',
     # Author (Github username)
-    author="Lapis0875",
+    author='Lapis0875',
     # Author`s email.
-    author_email="lapis0875@kakao.com",
+    author_email='lapis0875@kakao.com',
     # Short description
-    description="Library for Event-Driven architecture using asyncio.",
+    description='Library for Event-Driven architecture using asyncio.',
     # Long description in REAMDME.md
-    long_description=open('README.rst').read(),
+    long_description=readme,
+    long_description_content_type='text/markdown',
     # Project url
-    url="https://github.com/Lapis0875/Chronous",
+    project_urls={
+        'Documentation': 'https://lapis0875.gitbook.io/chronous-docs',
+        'Source': 'https://github.com/Lapis0875/Chronous/',
+        'Tracker': 'https://github.com/Lapis0875/Chronous/issues',
+        'Funding': 'https://donaricano.com/mypage/1454721972__x4Qvm'
+    },
     # Include module directory 'chronous'
-    packages=find_packages(),
+    packages=['chronous', 'chronous.events', 'chronous.utils', 'chronous.sample'],
+    py_modules=['asyncio', 'logging'],
     # Dependencies : This project use module 'colorlog', so add requirements.
-    install_requires=["colorama>=0.4.3", "colorlog>=4.2.1"],
+    install_requires=['wheel>=0.35.1'],
+    extras_require=extras_require,
     # Module`s python requirement
-    python_requires=">=3.6",
+    python_requires='>=3.6',
     # Keywords about the module
-    keywords=["Event-Driven architecture", "EDD", "async", "asynchronous", "asyncio"],
+    keywords=['Event-Driven architecture', 'EDD', 'async', 'asynchronous', 'asyncio'],
     # Tags about the module
     classifiers=[
-        "Programming Language :: Python :: 3",
-        "License :: OSI Approved :: MIT License",
-        "Operating System :: OS Independent"
-    ],
+        'License :: OSI Approved :: MIT License',
+        'Operating System :: OS Independent'
+        'Programming Language :: Python :: 3.6',
+        'Programming Language :: Python :: 3.7',
+        'Programming Language :: Python :: 3.8',
+        'Topic :: Software Development :: Libraries',
+        'Topic :: Software Development :: Libraries :: Python Modules',
+    ]
 )
