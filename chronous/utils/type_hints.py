@@ -5,7 +5,7 @@ from typing import Callable, Coroutine, TypeVar
 CLASS = type
 CoroutineFunction = Callable[..., Coroutine]
 
-# Generics
+# Generics TypeVars
 T = TypeVar('T')  # Any type.
 KT = TypeVar('KT')  # Key type.
 VT = TypeVar('VT')  # Value type.

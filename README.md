@@ -1,3 +1,4 @@
+
 # Chronous
 
 ![py_ver](https://img.shields.io/pypi/pyversions/chronous?label=Python%20Version&logo=python&logoColor=yellow)
@@ -9,7 +10,7 @@
 ![pypi_package](https://img.shields.io/pypi/format/chronous?label=package&logo=pypi)
 ![pypi_status](https://img.shields.io/pypi/status/chronous?color=blue&logo=pypi&logoColor=blue)
 
-![discord](https://img.shields.io/discord/622434051365535745?color=blue&label=Discord&logo=Discord&logoColor=White)
+[![discord](https://img.shields.io/discord/622434051365535745?color=blue&label=Discord&logo=Discord&logoColor=White)](https://discord.gg/taVq6rw)
 
 
 Chronous is a asynchronous python library designed to make asynchronous event-driven architectures.

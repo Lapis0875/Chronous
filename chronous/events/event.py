@@ -129,18 +129,24 @@ class ListenerDispatchException(EventException):
 
 class BaseEvent(metaclass=EventMeta):
 
-    def __init__(self):
+    def __init__(self, loopable: bool):
         super(BaseEvent, self).__init__()
         # Parse class name to event's name : 'BaseEvent -> Base'
         self._name = self.__class__.__name__.replace('Event', '')
+        self._loopable: bool = loopable
+        print('Created and registered event named {}'.format(self._name))
 
     @property
     def name(self) -> str:
         return self._name
 
-    async def check(self):
+    @property
+    def loopable(self) -> bool:
         """Check status to decide whether to dispatch event or not,
         Returns:
             check (bool) : boolean value to do dispatch (True -> dispatch / False -> pass)
         """
-        raise NotImplementedError("Event subclasses must define check() method!")
+        return self._loopable
+
+    def __repr__(self):
+        return 'Event(name={})'.format(self._name)

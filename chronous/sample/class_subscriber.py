@@ -1,11 +1,46 @@
-from typing import NoReturn
-
-from chronous.events import BaseEvent, EventBus
-from chronous import BaseArchitecture
-
-lifecycleBus: EventBus = EventBus(name='lifecycle')
+from chronous.events import BaseEvent, EventBusFactory, EVENT_BUS, EventBus
 
 
+@EventBusFactory.registerSubclass
+class LifecycleBus(EventBus):
+
+    def __init__(self):
+        super().__init__(name='lifecycle')
+        # parent = EventBusFactory.getBus(name='lifecycle')
+        # print(parent.__dict__)
+        print(self.__dict__)
+        # self.__dict__.update(parent.__dict__)
+        # print(self.__dict__)
+        self.subclass = True
+
+    def __repr__(self):
+        return 'LifecycleBus(name=lifecycle)'
+
+    async def loop(self, count: int = 0):
+        if count > 0:
+            for i in range(count):
+                await self._loop(i)
+        else:
+            i: int = 0
+            while True:
+                await self._loop(i)
+                i += 1
+
+    async def _loop(self, i: int):
+        self.logger.debug('Dispatching {} event')
+        await self.dispatch('Loop', loopCount=i)
+
+
+# You can get same bus object using same name.
+lifecycleBus = LifecycleBus()
+print(lifecycleBus, id(lifecycleBus), hash(lifecycleBus), lifecycleBus.__dict__)
+print(EventBusFactory.getBusNames())
+bus2: EVENT_BUS = EventBusFactory.getBus(name='lifecycle')
+print(bus2, id(bus2), hash(bus2), bus2.__dict__)
+print(lifecycleBus is bus2)
+
+
+@lifecycleBus.registerEvent
 class StartEvent(BaseEvent):
     """
     Lifecycle event indicating 'Start' phase of the process
@@ -14,12 +49,13 @@ class StartEvent(BaseEvent):
     text: str = 'Hello Event!'
 
     def __init__(self):
-        super(StartEvent, self).__init__()
+        super().__init__()
 
     async def check(self):
         return False    # You need to manually dispatch this.
 
 
+@lifecycleBus.registerEvent
 class LoopEvent(BaseEvent):
     """
     Lifecycle event indicating 'Loop' phase of the process
@@ -28,12 +64,13 @@ class LoopEvent(BaseEvent):
     loopCount: int = 0
 
     def __init__(self):
-        super(LoopEvent, self).__init__()
+        super().__init__()
 
     async def check(self):
         return True     # Always dispatched on each loop.
 
 
+@lifecycleBus.registerEvent
 class CloseEvent(BaseEvent):
     """
     Lifecycle event indicating 'Close' phase of the process
@@ -43,36 +80,17 @@ class CloseEvent(BaseEvent):
     farewell: str = 'Good bye!'
 
     def __init__(self):
-        super(CloseEvent, self).__init__()
+        super().__init__()
 
     async def check(self):
         return False    # You need to manually dispatch this.
 
-
-class LifecycleArchitecture(BaseArchitecture):
-
-    def __init__(self):
-        super(LifecycleArchitecture, self).__init__(name='lifecycle', bus=lifecycleBus)
-        self.bus.registerEvent(StartEvent())
-        self.bus.registerEvent(LoopEvent())
-        self.bus.registerEvent(CloseEvent())
-
-    async def process(self) -> NoReturn:
-        # dispatching with event attribute
-        await self.bus.dispatch('start', text='I`m StartEvent, dispatched manually!')
-        for i in range(1, 11):
-            # Sample loop
-            # dispatching with event attribute & additional attribute
-            await self.bus.dispatch('loop', loopCount=i, extra='Lorem ipsum')
-        # dispatching with event attribute
-        await self.bus.dispatch('close', totalLoopCount=i, farewell='Finishing example. Make your own!')
-
-
-app = LifecycleArchitecture()
-
+print(lifecycleBus.events)
+print(lifecycleBus._events)
 
 # Subscribing class
-@lifecycleBus.subscribe
+# @lifecycleBus.subscribe
+@EventBus.subscribeToBus('lifecycle')
 class LifecycleSubscriber:
     loopCount: int = 0
 
@@ -80,13 +98,14 @@ class LifecycleSubscriber:
         """
         __init__ cannot have any arguments currently.
         """
-        print(type(self.someStartHandler), self.someStartHandler)
-        pass
+        lifecycleBus.logger.debug('Initializing subscriber {}'.format(self.__class__.__name__))
+        lifecycleBus.logger.debug('Inspecting metadata: {}'.format(self.__class__.__dict__))
+        lifecycleBus.logger.debug('Inspecting listener: {}'.format(self.someStartHandler.__dict__))
 
     # Add listener using architecture's bus attribute.
     # If you define event listener with parameter 'eventName',
     # listener's name does not need to be 'onEvent' structure.
-    @app.bus.listen(eventName='start')
+    @lifecycleBus.listen(eventName='Start')
     async def someStartHandler(self, e: StartEvent):
         print(e.text)           # Accessing to event object!
         print(getattr(lifecycleBus, '_subscribers', []))
@@ -101,11 +120,15 @@ class LifecycleSubscriber:
         print(e.__dict__)
         print(e.extra)     # Attribute not defined in event class, but patched in event object.
 
-    @lifecycleBus.listen(eventName='close')
+    @lifecycleBus.listen(eventName='Close')
     async def closingApp(self, e: CloseEvent):
         print(e.totalLoopCount)
         print(e.totalLoopCount == self.loopCount)   # Accessing to subscriber class's attribute!
         print(e.farewell)
 
 
-app.run()
+async def task():
+    await lifecycleBus.dispatch('Start', text='')
+    for i in range(5):
+        await lifecycleBus.dispatch('Loop', loopCount=i, extra='Looping for {} times!'.format(i))
+    await lifecycleBus.dispatch('Close', totalLoopCount=i, farewell='Finishing example!')

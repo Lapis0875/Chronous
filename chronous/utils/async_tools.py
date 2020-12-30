@@ -1,17 +1,22 @@
 from __future__ import annotations
-from collections import AsyncIterator
-from typing import Any, Iterable
+
+import asyncio
+from typing import Iterable, Generator, AsyncIterator
+from .type_hints import T
 
 
-class AsyncIter(AsyncIterator):
-    def __init__(self, items: Iterable[Any]):
-        self.items = (i for i in items)
+class AsyncIter:
+    def __init__(self, items: Iterable[T]):
+        self.items: Generator = (item for item in items)
 
-    def __aiter__(self) -> AsyncIter:
+    def __aiter__(self) -> AsyncIterator[T]:
         return self
 
-    def __anext__(self) -> Any:
+    async def __anext__(self) -> T:
         try:
-            yield self.items
-        except GeneratorExit:
+            value: T = next(self.items)
+        except StopIteration:
             raise StopAsyncIteration
+        return value
+        # except GeneratorExit:
+        #     raise StopAsyncIteration

@@ -1,6 +1,6 @@
 from setuptools import setup
 
-with open('README.rst', mode='rt', encoding='utf-8') as f:
+with open('README.md', mode='rt', encoding='utf-8') as f:
     readme = f.read()
 
 extras_require = {
@@ -15,7 +15,7 @@ setup(
     # Module name
     name='chronous',
     # Module version
-    version='2.0.0',
+    version='2.0.0b4',
     # License - MIT!
     license='MIT',
     # Author (Github username)
@@ -32,11 +32,11 @@ setup(
         'Documentation': 'https://lapis0875.gitbook.io/chronous-docs',
         'Source': 'https://github.com/Lapis0875/Chronous/',
         'Tracker': 'https://github.com/Lapis0875/Chronous/issues',
-        'Funding': 'https://donaricano.com/mypage/1454721972__x4Qvm'
+        'Funding': 'https://www.patreon.com/lapis0875'
     },
     # Include module directory 'chronous'
     packages=['chronous', 'chronous.events', 'chronous.utils', 'chronous.sample'],
-    py_modules=['asyncio', 'logging'],
+    py_modules=[],
     # Dependencies : This project use module 'colorlog', so add requirements.
     install_requires=['wheel>=0.35.1'],
     extras_require=extras_require,
@@ -47,10 +47,16 @@ setup(
     # Tags about the module
     classifiers=[
         'License :: OSI Approved :: MIT License',
-        'Operating System :: OS Independent'
+        'Operating System :: OS Independent',
+        'Intended Audience :: Developers',
+        'Natural Language :: English',
+        'Natural Language :: Korean',
+        'Development Status :: 2 - Pre-Alpha',
         'Programming Language :: Python :: 3.6',
         'Programming Language :: Python :: 3.7',
         'Programming Language :: Python :: 3.8',
+        'Programming Language :: Python :: Implementation :: CPython',
+        'Framework :: AsyncIO',
         'Topic :: Software Development :: Libraries',
         'Topic :: Software Development :: Libraries :: Python Modules',
     ]

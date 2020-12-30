@@ -2,66 +2,150 @@ from __future__ import annotations
 import asyncio
 import inspect
 from copy import deepcopy
-from functools import reduce
-from typing import Dict, List, Optional, Union, Tuple, Any
+from typing import Dict, List, Optional, Union, Tuple, Any, ClassVar, TypeVar
 from .event import BaseEvent, ListenerDispatchException
-from chronous.utils import CoroutineFunction, CLASS, getLogger, Logger, LogLevels, AsyncIter
+from chronous.utils.type_hints import CoroutineFunction, CLASS
+from chronous.utils.logging_util import getLogger, Logger, LogLevels
+from chronous.utils.module_private import modulePrivate, ModulePrivateError
+from chronous.utils import AsyncIter, isMethodFunction, notMethodFunction
 
 __all__ = (
-    "BusMeta",
+    "EventBusFactory",
+    "EVENT_BUS",
     "EventBus",
     "DefaultBus"
 )
 
 
-class BusMeta(type):
-    """
-    Ensure only one EventBus instance can be made with a certain name. (이름당 한개의 이벤트 버스를 보장)
-    """
-    _buses: Dict[str, EventBus] = {}
+class EventBusFactory:
+    _bus_cache: ClassVar[Dict[str, EVENT_BUS]] = {}
+    _subclass_cache: ClassVar[Dict[str, CLASS]] = {}
+    _logger: ClassVar[Logger] = getLogger('chronous.events.busfactory')
 
-    def __init__(self, *args, **kwargs):
-        """Make bus objects able to be instantiate once per name
-        (이름당 한개의 이벤트 버스만 생성되게 함)
+    @classmethod
+    def getBus(cls, name: str, subclass: Optional[str] = None) -> EVENT_BUS:
+        cls._logger.debug('Retrieve bus instance named {}.'.format(name))
+        try:
+            return cls._bus_cache[name]
+        except KeyError:
+            cls._logger.debug('No bus named {} is in cache. Create new one.'.format(name))
+            if subclass is not None:
+                try:
+                    subclass: CLASS = cls._subclass_cache[subclass]
+                    cls._logger.debug('Create bus with subclass named {}.'.format(subclass.__name__))
+                    return cls.createBus(name, subclass)
+                except:
+                    cls._logger.debug(
+                        'No subclass named {} registered in EventBusFactory. Raise KeyError.'
+                        .format(subclass)
+                    )
+                    raise KeyError('No subclass named {} registered in EventBusFactory.'.format(subclass))
 
-        Args:
-            args (Any):
-            kwargs (Any):
+    @classmethod
+    def getRegisteredBus(cls, name: str) -> Optional[EVENT_BUS]:
+        cls._logger.debug('Retrieve bus instance named {} from cache.'.format(name))
+        return cls._bus_cache.get(name)
 
-        Returns:
-            bus (EventBus) :
-        """
-        name: str = kwargs.get('name')
-        bus = self._buses.get(name)
-        if bus is None:
-            super(BusMeta, self).__init__(*args, **kwargs)
+    @classmethod
+    @modulePrivate
+    def createBus(cls, name: str, Class: Optional[CLASS] = None):
+        cls._logger.debug(
+            'Create new bus instance named {} with Class '
+            .format(
+                name,
+                Class.__name__ if Class is not None else 'EventBus'
+            )
+        )
+        if Class is not None:
+            __init__argspec = inspect.getfullargspec(Class.__init__)
+            print(__init__argspec)
+            bus = Class(name)
         else:
-            self = bus
+            bus = EventBus(name=name)
+        cls._bus_cache[name] = bus
+        return bus
+
+    @classmethod
+    def getBusNames(cls) -> Tuple[str, ...]:
+        return tuple(cls._bus_cache.keys())
+
+    @classmethod
+    def registerSubclass(cls, subclass: CLASS) -> CLASS:
+        """Register Subclass of EventBus and make them can be instantiated through factory/
+        Args:
+            subclass (class object): Class subclassing EventBus.
+        """
+        cls._logger.debug('Register EventBus subclass named {}.'.format(subclass.__name__))
+        if not issubclass(subclass, EventBus):
+            raise TypeError(
+                'Only subclass of EventBus can be registered as subclass on EventBusFactory. {} is not suitable.'
+                .format(subclass)
+            )
+        print(cls.__init__)
+        argspec: inspect.FullArgSpec = inspect.getfullargspec(cls.__init__)
+        print(argspec)
+        args: List[str] = argspec.args
+        kwonlyargs: List[str] = argspec.kwonlyargs
+        defaults = argspec.defaults
+        if len(args) == 1:
+            pass
+        else:
+            pass
+
+        cls._subclass_cache[subclass.__name__] = subclass
+        return subclass     # Return this for later use.
+
+    @classmethod
+    @modulePrivate
+    def registerInstance(cls, instance: EventBus):
+        cls._bus_cache[instance.name] = instance
 
 
-class EventBus(metaclass=BusMeta):
+# Private class. Type hint is supported using EVENT_BUS TypeVar.
+# 굳이 EventBus가 하나의 이름에 고유한 객체를 가져야 할까? 너무 강박적으로 싱글톤처럼 만드려 하는것 같다.
+@modulePrivate
+class EventBus:
     """Bus class of Events.
 
-    Attributes:
+    Properties:
         name (str): name of this event bus.
         events (List[BaseEvent]): list of events registered in this bus.
         eventLoop (asyncio.AbstractEventLoop): event loop which this bus is using.
     """
+
     _events: Dict[str, BaseEvent]
     _listeners: Dict[BaseEvent, List[CoroutineFunction]]
     _subscribers: Dict[str, object]
 
-    def __init__(self, *, name: str):
-        self.logger: Logger = getLogger('chronous.events.bus', LogLevels.DEBUG)
-        self._name = name
-        self._event_loop = asyncio.get_event_loop()
+    def __call__(self, *args, **kwargs):
+        name = kwargs.get('name')
+        bus: Optional[EVENT_BUS] = EventBusFactory.getRegisteredBus(name)
+        if bus is not None:
+            return bus
 
-        self._events: Dict[str, BaseEvent] = {}
-        self._listeners: Dict[BaseEvent, List[CoroutineFunction]] = {}
-        self._subscribers: Dict[str, object] = {}
+    def __init__(self, *, name: str):
+        """Make bus objects able to be instantiate once per name
+        (이름당 한개의 이벤트 버스만 생성되게 함)
+
+        Args:
+
+        Returns:
+            bus (EventBus) :
+        """
+        if EventBusFactory.getRegisteredBus(name) is None:
+            self.logger: Logger = getLogger('chronous.events.bus', LogLevels.DEBUG)
+            self._name = name
+            self._event_loop = asyncio.get_event_loop()
+
+            self._events: Dict[str, BaseEvent] = {}
+            self._listeners: Dict[BaseEvent, List[str]] = {}
+            self._subscribers: Dict[str, object] = {}
+            EventBusFactory.registerInstance(self)
+        else:
+            raise ValueError('Cannot instantiate already existing event bus.')
 
     def __repr__(self):
-        return '<EventBus: name={}>'.format(self.name)
+        return '<EventBus: name={}>'.format(self._name)
 
     @property
     def name(self) -> str:
@@ -72,19 +156,27 @@ class EventBus(metaclass=BusMeta):
         return self._event_loop
 
     @property
-    def events(self) -> Tuple[BaseEvent]:
+    def events(self) -> Tuple[BaseEvent, ...]:
         return tuple(self._events.values())
 
-    def registerEvent(self, event: BaseEvent):
+    def registerEvent(self, event: Union[BaseEvent, CLASS]):
         self.logger.debug('Checking parameter `event` : {}'.format(event))
         if isinstance(event, BaseEvent):
             self.logger.debug('Registering event {} to this bus'.format(event.name))
             self._events[event.name.lower()] = event
-            self._listeners[event] = []
+            self._listeners[event.name] = []
+        elif inspect.isclass(event):
+            if issubclass(event, BaseEvent):
+                self.logger.debug('Register event with event class {}\n{}'.format(event.__qualname__, event.__dict__))
+                instance = event()
+                self.registerEvent(instance)
+                return event
+            else:
+                raise TypeError('Event class "{}" must subclass "BaseEvent"'.format(event.__qualname__))
         else:
             raise TypeError(
                 'Parameter "event" must be an instance of BaseEvent`s subclasses, not {}'
-                    .format(type(event))
+                .format(type(event))
             )
 
     def subscribe(self, subscriber: CLASS):
@@ -93,14 +185,24 @@ class EventBus(metaclass=BusMeta):
         Args:
             subscriber (class) : class object to subscribe event bus.
         """
+        print('Registering subscriber {}'.format(subscriber.__qualname__))
         if inspect.isclass(subscriber):
 
             setattr(subscriber, '__subscriber__', True)
             events: List[str] = []
 
-            listeners = filter(lambda m: inspect.ismethod(m) and m.__listener__, subscriber.__dict__.items())
+            print(subscriber.__dict__)
+
+            listeners = filter(
+                    lambda attr: getattr(attr, '__listener__', False),
+                    subscriber.__dict__.values()
+            )
             for method in listeners:
+                print(method)
+                print(method.__qualname__)
+                print(method.__dict__)
                 eventName: Optional[str] = getattr(method, '__event_name__', None)
+                print('__event_name__ =', eventName)
                 if eventName is None:
                     raise AttributeError(
                         'Malformed listener {} in subscriber {} does not have metadata "__event_name__"'
@@ -108,17 +210,30 @@ class EventBus(metaclass=BusMeta):
                     )
 
                 # Checking if event is existing and registered.
-                event: Optional[BaseEvent] = self._events.get(eventName)
+                event: Optional[BaseEvent] = self._events[eventName]
+                print('event =', event)
                 if event is None:
                     raise AttributeError(
                         'Malformed listener {} in subscriber {} has event not registered in the bus {}'
-                        .format(method.__name__, subscriber.__name__, self.__name__)
+                        .format(method.__name__, subscriber.__name__, self._name)
                     )
                 events.append(eventName)
             setattr(subscriber, '__subscribing_events__', events)
             self._subscribers[subscriber.__name__] = subscriber()
         else:
             raise TypeError('Argument "subscriber" must be a class object!')
+
+    # Just use EventBus instance.
+    @classmethod
+    def subscribeToBus(cls, busName: str):
+        bus: Optional[EventBus] = EventBusFactory.getBus(busName)
+        if bus is None:
+            raise ValueError('bus named {} does not exist'.format(busName))
+
+        def registerSubscriber(subscriber: CLASS):
+            return bus.subscribe(subscriber)
+
+        return registerSubscriber
 
     def listen(self, eventName: Optional[str] = None):
         """Add listener to event.
@@ -133,6 +248,7 @@ class EventBus(metaclass=BusMeta):
             Args:
                 listener (coroutine function): coroutine function to register as listener
             """
+            print('Registering listener {}'.format(listener.__qualname__))
             if not asyncio.iscoroutinefunction(listener):
                 raise TypeError('listener must be a coroutine function object!')
 
@@ -142,9 +258,9 @@ class EventBus(metaclass=BusMeta):
             # print(listener.__annotations__)
 
             eventNameParsed: str = (
-                eventName.lower()
-                if eventName is not None
-                else listener.__name__.replace('on', '').lower()
+                listener.__name__.replace('on', '').lower()
+                if eventName is None
+                else eventName.lower()
             )
             self.logger.debug('event name = {}'.format(eventNameParsed))
             event: Optional[BaseEvent] = self._events.get(eventNameParsed)
@@ -158,6 +274,8 @@ class EventBus(metaclass=BusMeta):
             # Metadata of listener
             setattr(listener, '__listener__', True)
             setattr(listener, '__event_name__', event.name)
+            print(listener.__dict__)
+            return listener
 
         return registerListener
 
@@ -194,20 +312,20 @@ class EventBus(metaclass=BusMeta):
                     name='dispatch_{event}_{index}'
                     .format(event=event.name, index=i_coro[0])
                 ),
-                enumerate(filter(lambda l: l.__name__ == l.__qualname__, listeners))
+                enumerate(filter(notMethodFunction, listeners))
             ),
-            # methods
+            # method functions
             *map(
                 # i_coro = (i, coro)
                 lambda i_coro: asyncio.create_task(
                     i_coro[1](
                         self._subscribers[i_coro[1].__qualname__.split('.')[0]]
-                        ,event
+                        , event
                     ),
                     name='dispatch_{event}_{index}'
                     .format(event=event.name, index=i_coro[0])
                 ),
-                enumerate(filter(lambda l: l.__name__ != l.__qualname__, listeners))
+                enumerate(filter(isMethodFunction, listeners))
             ),
             return_exceptions=True
         )
@@ -229,11 +347,23 @@ class EventBus(metaclass=BusMeta):
         # Reset event data
         event.__dict__ = copied
 
-    async def loop(self):
-        async for event in AsyncIter(self._events.values()):
+    async def infiniteLoop(self):
+        while True:
+            await self._loop()
+
+    async def loop(self, count: int = 0):
+        for _ in range(count):
+            await self._loop()
+
+    async def _loop(self):
+        """Tasks to await during each loop."""
+        async for event in AsyncIter(filter(lambda e: e.check(), self._events.values())):
+            self.logger.debug('Checking {} event to be dispatched through loop...'.format(event.name))
             doDispatch: bool = await event.check()
             if doDispatch:
+                self.logger.debug(' events to be dispatched through loop...')
                 await self.dispatch(event)
 
 
-DefaultBus: EventBus = EventBus(name='Default')
+EVENT_BUS = TypeVar('EVENT_BUS', bound=EventBus)
+DefaultBus: EVENT_BUS = EventBus(name='Default')
